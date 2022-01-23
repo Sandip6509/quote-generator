@@ -1,1 +1,1 @@
-echo "# quote-generator"
+# quote-generator
