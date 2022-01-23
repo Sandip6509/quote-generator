@@ -6,39 +6,52 @@ const newQuoteBtn = document.getElementById('new-quote');
 const loader = document.getElementById('loader');
 
 // Show Loading
-function loading(){
+function showLoadingSpinner(){
     loader.hidden = false;
     quoteContainer.hidden = true;
 }
 
 // Hide loading
-function complete(){
-    quoteContainer.hidden = false;
-    loader.hidden = true;
+function removeLoadingSpinner(){
+    if(!loader.hidden){
+        quoteContainer.hidden = false;
+        loader.hidden = true;
+    }
 }
 
-// Show New Quotes
-function newQuotes(){
-    loading();
-    // Pick a random quote form apiQuotes array
-    const quote = localQuotes[Math.floor(Math.random() * localQuotes.length)];
+// Get Quote From API
+async function getQuote(){
+    showLoadingSpinner();
+    // We need to use a proxy URL to make our API call in order to avoid
+    const proxyUrl = 'https://jacinto-cors-proxy.herokuapp.com/';
+    const apiUrl = 'http://api.forismatic.com/api/1.0/?method=getQuote&lang=en&format=json';
+    
+    try{
+        const response = await fetch(proxyUrl + apiUrl);
+        const data = await response.json();
 
-    // Check if Author field is blank and replace it with 'Unknown'
-    if(!quote.author){
-        authorText.textContent = 'Unknown';
-    }else{
-        authorText.textContent = quote.author;
-    }
+        // If Author is blank, add 'Unknown'
+        if(data.quoteAuthor === ''){
+            authorText.innerText = 'Unknown';
+        }else{
+            authorText.innerText = data.quoteAuthor;
+        }
 
-    // Check Quote length to determine styling
-    if(quote.text.length >120){
-        quoteText.classList.add('long-quote');
-    }else{
-        quoteText.classList.remove('long-quote');
+        // Reduce font size for long quotes
+        if(data.quoteText.length > 120){
+            quoteText.classList.add('long-quote');
+        }else{
+            quoteText.classList.remove('long-quote');
+        }
+
+        quoteText.innerText = data.quoteText;
+
+        // Stop Loader, Show Quote
+        removeLoadingSpinner();
+
+    }catch (error){
+        getQuote();
     }
-    // Set Quote, Hide Loader
-    quoteText.textContent = quote.text;
-    complete();
 }
 
 function tweetQuote(){
@@ -47,8 +60,8 @@ function tweetQuote(){
 }
 
 // Event Listeners
-newQuoteBtn.addEventListener('click', newQuotes);
+newQuoteBtn.addEventListener('click', getQuote);
 twitterBtn.addEventListener('click', tweetQuote);
 
 // On Load
-newQuotes();
+getQuote();
